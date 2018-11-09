@@ -1,6 +1,7 @@
 package br.edu.ulbra.election.election.service;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
@@ -34,6 +35,18 @@ public class ElectionService {
     public List<ElectionOutput> getAll(){
         Type electionOutputListType = new TypeToken<List<ElectionOutput>>(){}.getType();
         return modelMapper.map(electionRepository.findAll(), electionOutputListType);
+    }
+    
+    public List<ElectionOutput> getByYear(Integer year){
+    	List<ElectionOutput> selectYear = getAll();
+    	List<ElectionOutput> electionSelectYear = new ArrayList<>();
+        for (ElectionOutput electionOutput : selectYear) {
+        	int getYear = electionOutput.getYear();
+			if(getYear == year) {
+				electionSelectYear.add(electionOutput);
+			}
+		}
+        return electionSelectYear;
     }
 
     public ElectionOutput create(ElectionInput electionInput) {

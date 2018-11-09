@@ -10,6 +10,7 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -32,7 +33,7 @@ public class ElectionApi {
     @GetMapping("/year/{year}")
     @ApiOperation(value = "Get election List by year")
     public List<ElectionOutput> getByYear(@PathVariable Integer year){
-        return electionService.getAll();
+        return electionService.getByYear(year);
     }
 
     @GetMapping("/{electionId}")
