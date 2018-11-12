@@ -14,6 +14,7 @@ import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.input.v1.ElectionInput;
 import br.edu.ulbra.election.election.model.Election;
 import br.edu.ulbra.election.election.output.v1.GenericOutput;
+import br.edu.ulbra.election.election.output.v1.PartyOutput;
 import br.edu.ulbra.election.election.output.v1.ElectionOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
 
@@ -22,7 +23,7 @@ public class ElectionService {
 
 	private final ElectionRepository electionRepository;
 	private final ModelMapper modelMapper;
-	
+	private final String[] states = {"BR", "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RO", "RS", "RR", "SC", "SE", "SP", "TO"};
 	private static final String MESSAGE_INVALID_ID = "Invalid id";
     private static final String MESSAGE_ELECTION_NOT_FOUND = "Election not found";
     
@@ -113,5 +114,22 @@ public class ElectionService {
         if (electionInput.getYear() == null){
                 throw new GenericOutputException("Invalid year");
         }
+        Integer maxYear = electionInput.getYear();
+		if(maxYear < 2000 || maxYear >= 2200) {
+			throw new GenericOutputException("O ano de eleição deve estar entre 2000 e 2199!");
+		}
+		Integer maxName = electionInput.getDescription().length();
+        if(maxName < 5) {
+        	throw new GenericOutputException("A descrição deve ter no mínimo 5 letras!");
+        }
+		boolean found = false;
+		for (int i = 0; i < states.length && !found; i++) {
+			if(states[i].equals(electionInput.getStateCode())){
+				found = true;
+			}
+		}
+		if(!found) {
+			throw new GenericOutputException("Estado inexistente!");
+		}
     }
 }
