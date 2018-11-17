@@ -5,11 +5,11 @@ import javax.persistence.*;
 @Entity
 public class Election {
 
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private Integer year;
 
     @Column(nullable = false)
@@ -49,4 +49,5 @@ public class Election {
     public void setDescription(String description) {
         this.description = description;
     }
+
 }
