@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -40,7 +41,19 @@ public class ElectionService {
         Type electionOutputListType = new TypeToken<List<ElectionOutput>>(){}.getType();
         return modelMapper.map(electionRepository.findAll(), electionOutputListType);
     }
-
+    
+    public List<ElectionOutput> getByYear(Integer year){
+    	List<ElectionOutput> selectYear = getAll();
+    	List<ElectionOutput> electionSelectYear = new ArrayList<>();
+        for (ElectionOutput electionOutput : selectYear) {
+        	int getYear = electionOutput.getYear();
+			if(getYear == year) {
+				electionSelectYear.add(electionOutput);
+			}
+		}
+        return electionSelectYear;
+    }
+    
     public ElectionOutput create(ElectionInput electionInput) {
         validateInput(electionInput);
         validateDuplicate(electionInput, null);
