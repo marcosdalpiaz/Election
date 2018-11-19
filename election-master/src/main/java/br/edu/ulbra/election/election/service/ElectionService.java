@@ -5,10 +5,13 @@ import br.edu.ulbra.election.election.enums.StateCodes;
 import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.input.v1.ElectionInput;
 import br.edu.ulbra.election.election.model.Election;
+import br.edu.ulbra.election.election.model.Vote;
 import br.edu.ulbra.election.election.output.v1.CandidateOutput;
 import br.edu.ulbra.election.election.output.v1.ElectionOutput;
 import br.edu.ulbra.election.election.output.v1.GenericOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
+import br.edu.ulbra.election.election.repository.VoteRepository;
+
 import org.apache.commons.lang.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
@@ -18,19 +21,22 @@ import org.springframework.stereotype.Service;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ElectionService {
 
     private final ElectionRepository electionRepository;
+    private final VoteRepository voteRepository;
     private final ModelMapper modelMapper;
     private final CandidateClientService candidateClientService;
     
     @Autowired
-    public ElectionService(ElectionRepository electionRepository, ModelMapper modelMapper, CandidateClientService candidateClientService){
+    public ElectionService(ElectionRepository electionRepository, ModelMapper modelMapper, CandidateClientService candidateClientService, VoteRepository voteRepository){
         this.electionRepository = electionRepository;
         this.modelMapper = modelMapper;
         this.candidateClientService = candidateClientService;
+        this.voteRepository = voteRepository;
     }
 
 
@@ -87,6 +93,11 @@ public class ElectionService {
         if (election == null){
             throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
         }
+        
+        Vote vote = voteRepository.findById(electionId).orElse(null);
+        if (vote != null) {
+        	 throw new GenericOutputException("Não pode ser alterado uma eleição com votos!"); 
+        }
 
         election.setStateCode(electionInput.getStateCode());
         election.setDescription(electionInput.getDescription());
@@ -105,7 +116,12 @@ public class ElectionService {
         if (election == null){
             throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
         }
-
+        
+        Vote vote = voteRepository.findById(electionId).orElse(null);
+        if (vote != null) {
+        	 throw new GenericOutputException("Não pode ser excluída uma eleição com votos!"); 
+        }
+        
         electionRepository.delete(election);
 
         return new GenericOutput("Election deleted");
@@ -116,14 +132,13 @@ public class ElectionService {
     	boolean foundItem = false;
     	
     	for(int i =0; i < listCdOut.size() && !foundItem; i++) {
-    		Long numberCdOut = listCdOut.get(i).getNumberElection();
+    		Long numberCdOut = listCdOut.get(i).getElectionOutput().getId();
     		if(numberCdOut.equals(electionId)) {
     			foundItem = true;
     		}
     	}
     	
-    	if (
-    			foundItem) {
+    	if (foundItem) {
     		throw new GenericOutputException("Cannot delete eleciton with Candidate");
 		}
     }
