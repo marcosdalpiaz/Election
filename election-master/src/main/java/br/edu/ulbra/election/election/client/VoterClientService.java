@@ -22,7 +22,7 @@ public class VoterClientService {
 		return this.voterClient.getById(id);
 	}
 
-	@FeignClient(value="voter-service", url="localhost:8081")
+	@FeignClient(value="voter-service", url="http://localhost:8081")
 	private interface VoterClient {
 
 		@GetMapping("/v1/voter/{voterId}")

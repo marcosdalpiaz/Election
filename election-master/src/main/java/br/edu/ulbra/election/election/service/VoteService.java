@@ -41,12 +41,31 @@ public class VoteService {
 
         if (voteInput.getCandidateNumber() == null){
             vote.setBlankVote(true);
+            vote.setNullVote(false);
         } else {
             vote.setBlankVote(false);
         }
 
-        // TODO: Validate null candidate
-        vote.setNullVote(false);
+        try {
+        	List<CandidateOutput> listCdOut = candidateClientService.getAll();
+        	boolean foundItem = false;
+        	
+        	for(int i =0; i < listCdOut.size() && !foundItem; i++) {
+        		Long numberCdOut = listCdOut.get(i).getElectionOutput().getId();
+        		if(numberCdOut.equals(voteInput.getElectionId())) {
+        			foundItem = true;
+        		}
+        	}
+        	if(foundItem != true && voteInput.getCandidateNumber() != null) {
+        		vote.setNullVote(true);
+        	} else {
+        		vote.setNullVote(false);
+        	}	
+        } catch (FeignException e) {
+        	if(e.status() == 500) {
+        		throw new GenericOutputException("Invalid Candidate");
+        	}
+        }
 
         voteRepository.save(vote);
 

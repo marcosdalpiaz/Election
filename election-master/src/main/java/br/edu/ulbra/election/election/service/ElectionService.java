@@ -96,7 +96,7 @@ public class ElectionService {
         
         Vote vote = voteRepository.findById(electionId).orElse(null);
         if (vote != null) {
-        	 throw new GenericOutputException("Não pode ser alterado uma eleição com votos!"); 
+        	 throw new GenericOutputException("This election have votes!"); 
         }
 
         election.setStateCode(electionInput.getStateCode());
@@ -119,7 +119,7 @@ public class ElectionService {
         
         Vote vote = voteRepository.findById(electionId).orElse(null);
         if (vote != null) {
-        	 throw new GenericOutputException("Não pode ser excluída uma eleição com votos!"); 
+        	 throw new GenericOutputException("This election have votes!"); 
         }
         
         electionRepository.delete(election);
@@ -127,7 +127,7 @@ public class ElectionService {
         return new GenericOutput("Election deleted");
     }
     
-    private void foundCandidateOnDeleteOrUpdate (Long electionId) {
+    public void foundCandidateOnDeleteOrUpdate (Long electionId) {
     	List<CandidateOutput> listCdOut = candidateClientService.getAll();
     	boolean foundItem = false;
     	
@@ -166,5 +166,4 @@ public class ElectionService {
             throw new GenericOutputException("Invalid Year");
         }
     }
-
 }

@@ -29,9 +29,9 @@ public class ResultService {
 
 			totVotes = new Long ((long) voteRepository.findByCandidateId(candidateId).size());
 
-			if (totVotes == null) {
+			if (totVotes.equals(null)) {
 				resultado.setTotalVotes((long) 0);
-			}else {
+			} else {
 				resultado.setTotalVotes(totVotes);
 			}
 
