@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @Service
 public class CandidateClientService {
@@ -21,10 +22,24 @@ public class CandidateClientService {
         return this.candidateClient.getAll();
     }
     
-    @FeignClient(name="candidate-service", url="localhost:8082")
+    public List<CandidateOutput> getByElectionId(Long electionId) {
+        return this.candidateClient.getByElectionId(electionId);
+    }
+
+    public CandidateOutput getById(Long id){
+		return this.candidateClient.getById(id);
+	}
+    
+    @FeignClient(name="candidate-service", url="http://localhost:8082")
     private interface CandidateClient {
 
         @GetMapping("/v1/candidate/")
         List<CandidateOutput> getAll();
+        
+        @GetMapping("/v1/candidate/election/{electionId}")
+        List<CandidateOutput> getByElectionId(@PathVariable(name = "electionId") Long electionId);
+
+        @GetMapping("/v1/candidate/{candidateId}")
+		CandidateOutput getById(@PathVariable(name = "candidateId") Long candidateId);
     }
 }
