@@ -6,5 +6,4 @@ import org.springframework.data.repository.CrudRepository;
 public interface ElectionRepository extends CrudRepository<Election, Long> {
 	
 	Election findFirstById(Long Id);
-    Election findFirstByYearAndStateCodeAndDescription(Integer year, String stateCode, String description);
 }

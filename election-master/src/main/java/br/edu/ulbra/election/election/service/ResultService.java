@@ -1,58 +1,64 @@
 package br.edu.ulbra.election.election.service;
-import java.util.ArrayList;
-import java.util.List;
 
+import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import br.edu.ulbra.election.election.client.CandidateClientService;
 import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.model.Election;
-import br.edu.ulbra.election.election.output.v1.CandidateOutput;
-import br.edu.ulbra.election.election.output.v1.ElectionCandidateResultOutput;
-import br.edu.ulbra.election.election.output.v1.ElectionOutput;
-import br.edu.ulbra.election.election.output.v1.ResultOutput;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
 import br.edu.ulbra.election.election.repository.VoteRepository;
 import feign.FeignException;
+import br.edu.ulbra.election.election.output.v1.ElectionCandidateResultOutput;
+import br.edu.ulbra.election.election.output.v1.ElectionOutput;
+import br.edu.ulbra.election.election.output.v1.ResultOutput;
+import br.edu.ulbra.election.election.output.v1.CandidateOutput;
 
 @Service
 public class ResultService {
 
 	private final VoteRepository voteRepository;
-	private final CandidateClientService candidateClientService;
 	private final ElectionRepository electionRepository;
+	private final CandidateClientService candidateClientService;
 
 	@Autowired
-	public ResultService(VoteRepository voteRepository, CandidateClientService candidateClientService, ElectionRepository electionRepository) {
+	public ResultService(VoteRepository voteRepository, ElectionRepository electionRepository,
+			CandidateClientService candidateClientService) {
 		this.voteRepository = voteRepository;
-		this.candidateClientService = candidateClientService;
 		this.electionRepository = electionRepository;
+		this.candidateClientService = candidateClientService;
 	}
 
 	public ElectionCandidateResultOutput getResultByCandidate(Long candidateId) {
 
-		ElectionCandidateResultOutput resultado = new ElectionCandidateResultOutput();      
+		if (candidateId == null) {
+			throw new GenericOutputException("Invalid id!");
+		}
+
+		ElectionCandidateResultOutput result = new ElectionCandidateResultOutput();
+
 		try {
-			Long totVotes;
-			resultado.setCandidate(candidateClientService.getById(candidateId));
+			CandidateOutput candidate = candidateClientService.getById(candidateId);
+			result.setCandidate(candidate);
+			Long numberElection = candidate.getNumberElection();
+			Long electionId = candidate.getElectionOutput().getId();
+			Long totalVotes = voteRepository.countByElectionIdAndNumberElection(electionId, numberElection);
 
-			totVotes = new Long ((long) voteRepository.findByCandidateId(candidateId).size());
-
-			if (totVotes.equals(null)) {
-				resultado.setTotalVotes((long) 0);
+			if (totalVotes != 0) {
+				result.setTotalVotes(totalVotes);
 			} else {
-				resultado.setTotalVotes(totVotes);
+				result.setTotalVotes((long) 0);
 			}
 
 		} catch (FeignException e) {
 			if (e.status() == 500) {
-				throw new GenericOutputException("Candidate not found");
+				throw new GenericOutputException("Candidate not found!");
 			}
 		}
-		return resultado;
+
+		return result;
 	}
-	
+
 	public ResultOutput getResultByElection(Long electionId) {
 
 		if (electionId == null) {
@@ -65,28 +71,28 @@ public class ResultService {
 		}
 
 		ResultOutput resultElection = new ResultOutput();
-		List<CandidateOutput> candidatesA = new ArrayList<>();
-		ArrayList<ElectionCandidateResultOutput> candidatesB = new ArrayList<>();
+		ArrayList<CandidateOutput> candidate = new ArrayList<>();
+		ArrayList<ElectionCandidateResultOutput> candidateTwo = new ArrayList<>();
 
-		Long votesValidate = (long) 0, votesBlank, votesNull;
+		Long validateVotes = (long) 0, votesBlank, votesNull;
 
 		try {
-			candidatesA = candidateClientService.getByElectionId(electionId);
+			candidate = candidateClientService.getListCandidatesByElectionId(electionId);
 
-			for (CandidateOutput c : candidatesA) {
-				candidatesB.add(getResultByCandidate(c.getId()));
+			for (CandidateOutput c : candidate) {
+				candidateTwo.add(getResultByCandidate(c.getId()));
 			}
 
-			resultElection.setCandidates(candidatesB);
+			resultElection.setCandidates(candidateTwo);
 
-			for (ElectionCandidateResultOutput c : candidatesB) {
-				votesValidate = votesValidate + c.getTotalVotes();
+			for (ElectionCandidateResultOutput c : candidateTwo) {
+				validateVotes = validateVotes + c.getTotalVotes();
 			}
 
 			votesBlank = voteRepository.countByElectionIdAndBlankVote(electionId, true);
 			votesNull = voteRepository.countByElectionIdAndNullVote(electionId, true);
 
-			resultElection.setTotalVotes(votesValidate + votesBlank + votesNull);
+			resultElection.setTotalVotes(validateVotes + votesBlank + votesNull);
 			resultElection.setBlankVotes(votesBlank);
 			resultElection.setNullVotes(votesNull);
 
