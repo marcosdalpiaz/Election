@@ -2,6 +2,9 @@ package br.edu.ulbra.election.election.model;
 
 import javax.persistence.*;
 
+import br.edu.ulbra.election.election.input.v1.VoteInput;
+import br.edu.ulbra.election.election.repository.VoteRepository;
+
 @Entity
 public class Vote {
 
@@ -71,4 +74,19 @@ public class Vote {
     public void setElection(Election election) {
         this.election = election;
     }
+    
+    public static boolean verifyVote(VoteInput voteInput, VoteRepository voteRepository) {
+
+		Long voterTest = voteInput.getVoterId();
+		Long electionTest = voteInput.getElectionId();
+
+		Iterable<Vote> list = voteRepository.findAll();
+
+		for (Vote v : list) {
+			if (v.getVoterId().equals(voterTest) && electionTest.equals(v.getElection().getId())) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

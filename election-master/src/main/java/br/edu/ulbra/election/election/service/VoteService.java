@@ -110,4 +110,15 @@ public class VoteService {
         }
         return election;
     }
+    
+    public Boolean verifyVoter(Long voterId) {
+
+		List<Vote> vote = voteRepository.findByVoterId(voterId);
+
+		if (vote != null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 }
