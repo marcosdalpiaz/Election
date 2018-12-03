@@ -1,54 +1,39 @@
 package br.edu.ulbra.election.election.client;
 
-import java.util.ArrayList;
+import br.edu.ulbra.election.election.output.v1.CandidateOutput;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import br.edu.ulbra.election.election.output.v1.CandidateOutput;
+
+import java.util.List;
 
 @Service
 public class CandidateClientService {
 
-	private final CandidateClient candidateClient;
+    private final CandidateClient candidateClient;
 
-	@Autowired
-	public CandidateClientService(CandidateClient candidateClient) {
-		this.candidateClient = candidateClient;
-	}
+    @Autowired
+    public CandidateClientService(CandidateClient candidateClient){
+        this.candidateClient = candidateClient;
+    }
 
-	public CandidateOutput verifyElection(Long id) {
-		return this.candidateClient.verifyElection(id);
-	}
+    public CandidateOutput getById(Long candidateId){
+        return candidateClient.getById(candidateId);
+    }
 
-	public CandidateOutput verifyNumber(Long election, Long numero) {
-		return this.candidateClient.verifyNumber(election, numero);
-	}
+    public List<CandidateOutput> getByElection(Long electionId){
+        return candidateClient.getByElection(electionId);
+    }
 
-	public CandidateOutput getById(Long candidateId) {
-		return this.candidateClient.getById(candidateId);
-	}
+    @FeignClient(name = "candidate-service", url = "${url.candidate-service}")
+    private interface CandidateClient {
 
-	public ArrayList<CandidateOutput> getListCandidatesByElectionId(Long electionId) {
-		return this.candidateClient.getListCandidatesByElectionId(electionId);
-	}
+        @GetMapping("/v1/candidate/{candidateId}")
+        CandidateOutput getById(@PathVariable(name = "candidateId") Long candidateId);
 
-	@FeignClient(value = "candidate-service", url = "${url.candidate-service}")
-	private interface CandidateClient {
-
-		@GetMapping("/v1/candidate/getCandidateElection/{electionId}")
-		CandidateOutput verifyElection(@PathVariable(name = "electionId") Long electionId);
-
-		@GetMapping("/v1/candidate/getByElectionAndNumber/{numberElection}/{electionId}")
-		CandidateOutput verifyNumber(@PathVariable(name = "numberElection") Long numberElection,
-				@PathVariable(name = "electionId") Long electionId);
-
-		@GetMapping("/v1/candidate/{candidateId}")
-		CandidateOutput getById(@PathVariable(name = "candidateId") Long candidateId);
-
-		@GetMapping("/v1/candidate/getCandidateList/{electionId}")
-		ArrayList<CandidateOutput> getListCandidatesByElectionId(@PathVariable(name = "electionId") Long electionId);
-	}
-
+        @GetMapping("/v1/candidate/election/{electionId}")
+        List<CandidateOutput> getByElection(@PathVariable(name = "electionId") Long electionId);
+    }
 }

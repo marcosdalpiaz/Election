@@ -13,21 +13,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/result")
 public class ResultApi {
 
-	private final ResultService resultService;
+    private final ResultService resultService;
 
-	@Autowired
-	public ResultApi(ResultService resultService) {
-		this.resultService = resultService;
-	}
+    @Autowired
+    public ResultApi(ResultService resultService){
+        this.resultService = resultService;
+    }
 
-	@GetMapping("/election/{electionId}")
-	public ResultOutput getResultByElection(@PathVariable Long electionId) {
-		return resultService.getResultByElection(electionId);
-	}
+    @GetMapping("/election/{electionId}")
+    public ResultOutput getResultByElection(@PathVariable Long electionId){
+        return resultService.getResultByElection(electionId);
+    }
 
-	@GetMapping("/candidate/{candidateId}")
-	public ElectionCandidateResultOutput getResultByCandidate(@PathVariable Long candidateId) {
-		return resultService.getResultByCandidate(candidateId);
-	}
+    @GetMapping("/candidate/{candidateId}")
+    public ElectionCandidateResultOutput getResultByCandidate(@PathVariable Long candidateId){
+        return resultService.getResultByCandidate(candidateId);
+    }
 
 }

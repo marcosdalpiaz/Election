@@ -1,118 +1,69 @@
 package br.edu.ulbra.election.election.service;
 
-import java.util.ArrayList;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import br.edu.ulbra.election.election.client.CandidateClientService;
 import br.edu.ulbra.election.election.exception.GenericOutputException;
 import br.edu.ulbra.election.election.model.Election;
+import br.edu.ulbra.election.election.output.v1.*;
 import br.edu.ulbra.election.election.repository.ElectionRepository;
 import br.edu.ulbra.election.election.repository.VoteRepository;
-import feign.FeignException;
-import br.edu.ulbra.election.election.output.v1.ElectionCandidateResultOutput;
-import br.edu.ulbra.election.election.output.v1.ElectionOutput;
-import br.edu.ulbra.election.election.output.v1.ResultOutput;
-import br.edu.ulbra.election.election.output.v1.CandidateOutput;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ResultService {
 
-	private final VoteRepository voteRepository;
-	private final ElectionRepository electionRepository;
-	private final CandidateClientService candidateClientService;
+    private final ElectionRepository electionRepository;
+    private final VoteRepository voteRepository;
+    private final ModelMapper modelMapper;
+    private final CandidateClientService candidateClientService;
 
-	@Autowired
-	public ResultService(VoteRepository voteRepository, ElectionRepository electionRepository,
-			CandidateClientService candidateClientService) {
-		this.voteRepository = voteRepository;
-		this.electionRepository = electionRepository;
-		this.candidateClientService = candidateClientService;
-	}
+    private static final String MESSAGE_ELECTION_NOT_FOUND = "Election not found";
 
-	public ElectionCandidateResultOutput getResultByCandidate(Long candidateId) {
+    @Autowired
+    public ResultService(ElectionRepository electionRepository, VoteRepository voteRepository, ModelMapper modelMapper, CandidateClientService candidateClientService){
+        this.electionRepository = electionRepository;
+        this.voteRepository = voteRepository;
+        this.modelMapper = modelMapper;
+        this.candidateClientService = candidateClientService;
+    }
 
-		if (candidateId == null) {
-			throw new GenericOutputException("Invalid id!");
-		}
+    public ResultOutput getResultByElection(Long electionId){
+        Election election = electionRepository.findById(electionId).orElse(null);
+        if (election == null){
+            throw new GenericOutputException(MESSAGE_ELECTION_NOT_FOUND);
+        }
 
-		ElectionCandidateResultOutput result = new ElectionCandidateResultOutput();
+        Long totalVotes = voteRepository.countByElection(election);
+        Long blankVotes = voteRepository.countByElectionAndBlankVote(election, true);
+        Long nullVotes = voteRepository.countByElectionAndNullVote(election, true);
 
-		try {
-			CandidateOutput candidate = candidateClientService.getById(candidateId);
-			result.setCandidate(candidate);
-			Long numberElection = candidate.getNumberElection();
-			Long electionId = candidate.getElectionOutput().getId();
-			Long totalVotes = voteRepository.countByElectionIdAndNumberElection(electionId, numberElection);
+        ResultOutput resultOutput = new ResultOutput();
+        resultOutput.setElection(modelMapper.map(election, ElectionOutput.class));
+        resultOutput.setTotalVotes(totalVotes);
+        resultOutput.setBlankVotes(blankVotes);
+        resultOutput.setNullVotes(nullVotes);
+        resultOutput.setCandidates(getCandidatesResult(electionId));
+        return resultOutput;
+    }
 
-			if (totalVotes != 0) {
-				result.setTotalVotes(totalVotes);
-			} else {
-				result.setTotalVotes((long) 0);
-			}
+    private List<ElectionCandidateResultOutput> getCandidatesResult(Long electionId){
+        List<CandidateOutput> candidateOutputList = candidateClientService.getByElection(electionId);
+        return candidateOutputList.stream().map(this::toElectionCandidateResultOutput).collect(Collectors.toList());
+    }
 
-		} catch (FeignException e) {
-			if (e.status() == 500) {
-				throw new GenericOutputException("Candidate not found!");
-			}
-		}
+    private ElectionCandidateResultOutput toElectionCandidateResultOutput(CandidateOutput candidateOutput){
+        ElectionCandidateResultOutput candidateResultOutput = new ElectionCandidateResultOutput();
+        candidateResultOutput.setCandidate(candidateOutput);
+        candidateResultOutput.setTotalVotes(voteRepository.countByCandidateId(candidateOutput.getId()));
+        return candidateResultOutput;
+    }
 
-		return result;
-	}
-
-	public ResultOutput getResultByElection(Long electionId) {
-
-		if (electionId == null) {
-			throw new GenericOutputException("Invalid id!");
-		}
-
-		Election elec = electionRepository.findFirstById(electionId);
-		if (elec == null) {
-			throw new GenericOutputException("Election not found!");
-		}
-
-		ResultOutput resultElection = new ResultOutput();
-		ArrayList<CandidateOutput> candidate = new ArrayList<>();
-		ArrayList<ElectionCandidateResultOutput> candidateTwo = new ArrayList<>();
-
-		Long validateVotes = (long) 0, votesBlank, votesNull;
-
-		try {
-			candidate = candidateClientService.getListCandidatesByElectionId(electionId);
-
-			for (CandidateOutput c : candidate) {
-				candidateTwo.add(getResultByCandidate(c.getId()));
-			}
-
-			resultElection.setCandidates(candidateTwo);
-
-			for (ElectionCandidateResultOutput c : candidateTwo) {
-				validateVotes = validateVotes + c.getTotalVotes();
-			}
-
-			votesBlank = voteRepository.countByElectionIdAndBlankVote(electionId, true);
-			votesNull = voteRepository.countByElectionIdAndNullVote(electionId, true);
-
-			resultElection.setTotalVotes(validateVotes + votesBlank + votesNull);
-			resultElection.setBlankVotes(votesBlank);
-			resultElection.setNullVotes(votesNull);
-
-			Election election = electionRepository.findFirstById(electionId);
-
-			ElectionOutput electionOutput = new ElectionOutput();
-
-			electionOutput.setDescription(election.getDescription());
-			electionOutput.setId(election.getId());
-			electionOutput.setStateCode(election.getStateCode());
-			electionOutput.setYear(election.getYear());
-
-			resultElection.setElection(electionOutput);
-
-		} catch (FeignException e) {
-			if (e.status() != 500) {
-				throw new GenericOutputException(" " + e.status());
-			}
-		}
-		return resultElection;
-	}
-
+    public ElectionCandidateResultOutput getResultByCandidate(Long candidateId) {
+        CandidateOutput candidateOutput = candidateClientService.getById(candidateId);
+        return toElectionCandidateResultOutput(candidateOutput);
+    }
 }

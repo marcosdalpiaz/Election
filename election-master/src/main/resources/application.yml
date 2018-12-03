@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:h2:C:\Users\Marcos Varallo\Documents\Temp\election
+    url: jdbc:h2:C:\temp\election
     platform: h2
     username: sa
     driver-class-name: org.h2.Driver
@@ -33,7 +33,7 @@ info:
     name: Election
     creator-name: Tales Bitelo Viegas
     creator-email: tales.viegas@ulbra.br
-    
+
 url:
-  voter-service: 'http://localhost:8081'
   candidate-service: 'http://localhost:8082'
+  voter-service: 'http://localhost:8081'
